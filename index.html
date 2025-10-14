@@ -10,13 +10,15 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      /* Previene il double-tap zoom di default sui link e input */
+      /* Previene il double-tap zoom di default sui link e input e selezioni */
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       -khtml-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
       user-select: none;
+      /* Rimuove l'evidenziazione al tap su mobile */
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -31,7 +33,7 @@
       overflow-x: hidden;
       /* Migliora lo scrolling su iOS */
       -webkit-overflow-scrolling: touch;
-      /* Permette lo scroll verticale ma disabilita il pinch-zoom sul body */
+      /* Permette lo scroll verticale sul body, il pinch-zoom sarà gestito da JS nell'overlay */
       touch-action: pan-y;
     }
 
@@ -54,7 +56,7 @@
       gap: 1rem;
       width: 80%;
       max-width: 300px;
-      padding-bottom: 2rem; /* Spazio sotto i bottoni */
+      padding-bottom: 2rem;
     }
 
     button {
@@ -65,7 +67,6 @@
       border-radius: 10px;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
-      -webkit-tap-highlight-color: transparent; /* Rimuove l'evidenziazione al tap su mobile */
     }
 
     button:active {
@@ -94,13 +95,13 @@
       background: rgba(255, 255, 255, 0.98);
       display: none;
       flex-direction: column;
-      overflow-y: auto; /* Permette lo scroll delle immagini */
+      overflow-y: auto; /* Permette lo scroll nativo nell'overlay */
       z-index: 1000;
       padding: 1rem;
       animation: fadeIn 0.3s ease;
-      /* Disabilita il pinch-zoom e pan di default del browser quando l'overlay è attivo */
-      touch-action: none;
-      -webkit-overflow-scrolling: touch; /* Migliora lo scrolling su iOS anche nell'overlay */
+      /* Di default l'overlay permette lo scroll verticale e pan-x, pinch-zoom gestito da JS */
+      touch-action: pan-y pan-x;
+      -webkit-overflow-scrolling: touch;
     }
 
     .overlay.active {
@@ -113,10 +114,11 @@
     }
 
     .close-btn {
-      position: sticky; /* Rende il bottone fisso durante lo scroll nell'overlay */
+      position: sticky;
       top: 15px;
-      right: 15px;
-      align-self: flex-end; /* Allinea a destra all'interno del flex container */
+      /* Calcola la posizione a destra, tenendo conto del padding */
+      right: 1rem; 
+      align-self: flex-end;
       font-size: 1.8rem;
       background: none;
       border: none;
@@ -124,8 +126,7 @@
       color: #d8342c;
       font-weight: bold;
       z-index: 1100;
-      padding: 0 10px; /* Aggiunge un po' di padding per facilitare il tap */
-      -webkit-tap-highlight-color: transparent;
+      padding: 0 5px;
     }
 
     .menu-images {
@@ -133,20 +134,21 @@
       flex-direction: column;
       align-items: center;
       gap: 1rem;
-      padding-top: 1rem; /* Spazio tra il close-btn e la prima immagine */
-      padding-bottom: 2rem; /* Spazio sotto l'ultima immagine */
-      transform-origin: center center; /* Punto di origine per lo zoom */
-      transition: transform 0.3s ease-out; /* Transizione per lo zoom del double-tap */
-      will-change: transform; /* Hint al browser per l'ottimizzazione */
+      padding-top: 1rem;
+      padding-bottom: 2rem;
+      transform-origin: center center;
+      transition: transform 0.3s ease-out;
+      will-change: transform;
     }
 
     .menu-images img {
-      width: 100%; /* Le immagini occupano tutta la larghezza disponibile */
-      max-width: 500px; /* Limite massimo per immagini su schermi grandi */
-      height: auto; /* Mantiene le proporzioni */
+      width: 100%;
+      max-width: 500px;
+      height: auto;
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      pointer-events: none; /* Le immagini non intercettano eventi touch per lo zoom sull'overlay */
+      /* Le immagini di per sé non intercettano eventi touch per evitare conflitti */
+      pointer-events: none;
     }
 
     @media (min-width: 600px) {
@@ -154,7 +156,7 @@
         font-size: 2.5rem;
       }
       .menu-images img {
-        max-width: 600px; /* Aumenta la max-width su schermi più grandi */
+        max-width: 600px;
       }
     }
   </style>
@@ -165,7 +167,8 @@
 
   <div class="button-container">
     <button class="view-btn" id="viewMenuBtn">🍽️ Visualizza Menù</button>
-    <a href="public/MisterTomatoMenu.pdf" download>
+    <!-- Assicurati che il percorso del PDF sia corretto rispetto al file HTML -->
+    <a href="public/MisterTomatoMenu.pdf" download="MisterTomatoMenu.pdf">
       <button class="download-btn">⬇️ Scarica PDF del menù</button>
     </a>
   </div>
@@ -179,7 +182,7 @@
     const viewBtn = document.getElementById('viewMenuBtn');
     const closeBtn = document.getElementById('closeMenuBtn');
     const overlay = document.getElementById('menuOverlay');
-    const menuImagesContainer = document.getElementById('menuImages'); // Rinomina per chiarezza
+    const menuImagesContainer = document.getElementById('menuImages');
 
     // Genera automaticamente le immagini 1.png - 16.png
     for (let i = 1; i <= 16; i++) {
@@ -193,24 +196,24 @@
     viewBtn.addEventListener('click', () => {
       overlay.classList.add('active');
       document.body.style.overflow = 'hidden'; // Impedisce lo scroll del body
-      // Resetta lo zoom quando si apre l'overlay
+      // Resetta lo zoom e la posizione quando si apre l'overlay
       currentScale = 1;
       currentX = 0;
       currentY = 0;
       updateTransform();
-      menuImagesContainer.style.transition = 'none'; // Rimuove la transizione per il reset iniziale
+      menuImagesContainer.style.transition = 'none'; // Rimuove transizione per reset immediato
     });
 
     // Chiudi overlay
     closeBtn.addEventListener('click', () => {
       overlay.classList.remove('active');
       document.body.style.overflow = ''; // Ripristina lo scroll del body
-      // Resetta lo zoom anche alla chiusura
+      // Resetta lo zoom e la posizione anche alla chiusura
       currentScale = 1;
       currentX = 0;
       currentY = 0;
       updateTransform();
-      menuImagesContainer.style.transition = 'transform 0.3s ease-out'; // Ripristina la transizione
+      menuImagesContainer.style.transition = 'transform 0.3s ease-out'; // Ripristina transizione
     });
 
     /* --- Gestione Zoom & Pan (Pinch & Double-Tap) --- */
@@ -219,8 +222,7 @@
     let currentY = 0;
     let startPinchDistance = 0;
     let lastTap = 0;
-    let lastTranslateX = 0;
-    let lastTranslateY = 0;
+    let startTouches = []; // Per tenere traccia dei punti iniziali del touch per il pan
 
     function getDistance(touch1, touch2) {
       const dx = touch2.clientX - touch1.clientX;
@@ -238,6 +240,8 @@
     function updateTransform() {
       requestAnimationFrame(() => {
         menuImagesContainer.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
+        // Se siamo zoomati, disabilitiamo lo scroll nativo per gestire il pan con un dito
+        overlay.style.overflowY = currentScale > 1 ? 'hidden' : 'auto';
       });
     }
 
@@ -245,13 +249,9 @@
       if (e.touches.length === 2) {
         e.preventDefault(); // Previeni lo scroll o altri comportamenti di default
         startPinchDistance = getDistance(e.touches[0], e.touches[1]);
-
-        // Calcola il punto medio per il "pinch-origin"
-        const midpoint = getMidpoint(e.touches[0], e.touches[1]);
-        const rect = menuImagesContainer.getBoundingClientRect();
-        // Sposta il punto di origine della trasformazione sul punto di pinch iniziale
-        lastTranslateX = midpoint.x - rect.left - rect.width / 2;
-        lastTranslateY = midpoint.y - rect.top - rect.height / 2;
+        // Salva le posizioni iniziali dei tocchi per il calcolo del punto di pinch
+        startTouches = [{x: e.touches[0].clientX, y: e.touches[0].clientY}, 
+                        {x: e.touches[1].clientX, y: e.touches[1].clientY}];
         menuImagesContainer.style.transition = 'none'; // Rimuovi transizione durante il pinch
       } else if (e.touches.length === 1) {
         const currentTime = new Date().getTime();
@@ -259,6 +259,7 @@
         if (tapLength < 300 && tapLength > 0) { // Doppio tap
           e.preventDefault();
           const targetScale = currentScale === 1 ? 2 : 1; // Zoom 2x o reset
+
           menuImagesContainer.style.transition = 'transform 0.3s ease-out'; // Abilita transizione
           
           if (targetScale === 1) { // Reset zoom
@@ -272,113 +273,107 @@
             const rect = menuImagesContainer.getBoundingClientRect();
 
             // Calcola il nuovo offset per centrare lo zoom
-            currentX = (touchX - rect.left - rect.width / 2) * (1 - targetScale);
-            currentY = (touchY - rect.top - rect.height / 2) * (1 - targetScale);
+            const viewportMidX = rect.left + rect.width / 2;
+            const viewportMidY = rect.top + rect.height / 2;
+
+            currentX = (touchX - viewportMidX) * (1 - targetScale);
+            currentY = (touchY - viewportMidY) * (1 - targetScale);
+
             currentScale = targetScale;
           }
           updateTransform();
         }
         lastTap = currentTime;
+
+        // Inizia la modalità pan se già zoomato
+        if (currentScale > 1) {
+          isPanning = true;
+          startTouches = [{x: e.touches[0].clientX, y: e.touches[0].clientY}];
+          initialX = currentX;
+          initialY = currentY;
+          menuImagesContainer.style.transition = 'none'; // Rimuovi transizione durante il pan
+        }
       }
     }, { passive: false });
 
     overlay.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2) {
+      if (e.touches.length === 2) { // Pinch-to-zoom
         e.preventDefault();
         const currentPinchDistance = getDistance(e.touches[0], e.touches[1]);
         const scaleFactor = currentPinchDistance / startPinchDistance;
         let newScale = currentScale * scaleFactor;
 
         // Limita lo zoom
-        newScale = Math.min(Math.max(0.5, newScale), 4); // Min 0.5x, Max 4x
+        newScale = Math.min(Math.max(0.7, newScale), 4); // Min 0.7x, Max 4x
 
-        // Calcola il nuovo centro del pinch
-        const newMidpoint = getMidpoint(e.touches[0], e.touches[1]);
-        const rect = menuImagesContainer.getBoundingClientRect();
+        // Calcola il punto di riferimento del pinch relativo al container
+        const pinchMidX = getMidpoint(startTouches[0], startTouches[1]).x;
+        const pinchMidY = getMidpoint(startTouches[0], startTouches[1]).y;
+        
+        const currentMidX = getMidpoint(e.touches[0], e.touches[1]).x;
+        const currentMidY = getMidpoint(e.touches[0], e.touches[1]).y;
 
         // Applica traslazione per mantenere il punto di pinch centrato
-        const translateX = newMidpoint.x - rect.left - rect.width / 2;
-        const translateY = newMidpoint.y - rect.top - rect.height / 2;
+        const dx = (currentMidX - pinchMidX);
+        const dy = (currentMidY - pinchMidY);
 
-        currentX += (translateX - lastTranslateX) * (1 / currentScale); // Adatta la traslazione allo scale
-        currentY += (translateY - lastTranslateY) * (1 / currentScale);
-
-        lastTranslateX = translateX;
-        lastTranslateY = translateY;
+        currentX += dx;
+        currentY += dy;
 
         currentScale = newScale;
+        startPinchDistance = currentPinchDistance; // Aggiorna per il prossimo frame
+        startTouches = [{x: e.touches[0].clientX, y: e.touches[0].clientY}, 
+                        {x: e.touches[1].clientX, y: e.touches[1].clientY}];
+
+        updateTransform();
+      } else if (e.touches.length === 1 && isPanning && currentScale > 1) { // Pan con un dito
+        e.preventDefault();
+        const dx = e.touches[0].clientX - startTouches[0].x;
+        const dy = e.touches[0].clientY - startTouches[0].y;
+
+        let newX = initialX + dx;
+        let newY = initialY + dy;
+
+        // Calcola i limiti del pan per evitare di vedere lo sfondo
+        const rect = menuImagesContainer.getBoundingClientRect();
+        const containerRect = overlay.getBoundingClientRect(); // Contenitore visibile
+
+        const imgScaledWidth = rect.width; // Già scalato
+        const imgScaledHeight = rect.height; // Già scalato
+
+        const maxX = Math.max(0, (imgScaledWidth - containerRect.width) / 2);
+        const maxY = Math.max(0, (imgScaledHeight - containerRect.height) / 2);
+
+        // Limita il pan sull'asse X
+        if (imgScaledWidth > containerRect.width) {
+          currentX = Math.max(Math.min(newX, maxX), -maxX);
+        } else {
+          currentX = 0; // Centra se l'immagine è più piccola della viewport
+        }
+
+        // Limita il pan sull'asse Y
+        if (imgScaledHeight > containerRect.height) {
+          currentY = Math.max(Math.min(newY, maxY), -maxY);
+        } else {
+          currentY = 0; // Centra se l'immagine è più piccola della viewport
+        }
         updateTransform();
       }
     }, { passive: false });
 
     overlay.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) {
-        // Quando un dito viene sollevato, aggiorna la scala base
-        // Non facciamo nulla qui, la scala è già aggiornata in touchmove
-        menuImagesContainer.style.transition = 'transform 0.3s ease-out'; // Ripristina transizione
-      }
-    });
-
-    // Gestione dello scroll con un dito (pan) quando zoomato
-    let isPanning = false;
-    let startPanX = 0;
-    let startPanY = 0;
-    let initialX = 0;
-    let initialY = 0;
-
-    overlay.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1 && currentScale > 1) { // Solo pan se c'è zoom
-        isPanning = true;
-        startPanX = e.touches[0].clientX;
-        startPanY = e.touches[0].clientY;
-        initialX = currentX;
-        initialY = currentY;
-        menuImagesContainer.style.transition = 'none'; // Rimuovi transizione durante il pan
-      }
-    }, { passive: false });
-
-    overlay.addEventListener('touchmove', (e) => {
-      if (isPanning && e.touches.length === 1) {
-        e.preventDefault();
-        const dx = e.touches[0].clientX - startPanX;
-        const dy = e.touches[0].clientY - startPanY;
-
-        // Limita il pan per non mostrare bordi vuoti
-        const contentWidth = menuImagesContainer.scrollWidth * currentScale;
-        const contentHeight = menuImagesContainer.scrollHeight * currentScale;
-        const viewportWidth = overlay.clientWidth;
-        const viewportHeight = overlay.clientHeight;
-
-        const maxPanX = Math.max(0, (contentWidth - viewportWidth) / 2);
-        const maxPanY = Math.max(0, (contentHeight - viewportHeight) / 2);
-
-        let newX = initialX + dx;
-        let newY = initialY + dy;
-
-        // Limita l'asse X
-        if (contentWidth > viewportWidth) {
-          newX = Math.max(Math.min(newX, maxPanX), -maxPanX);
-        } else {
-          newX = 0; // Se il contenuto è più piccolo del viewport, non si può pan
-        }
-
-        // Limita l'asse Y
-        if (contentHeight > viewportHeight) {
-          newY = Math.max(Math.min(newY, maxPanY), -maxPanY);
-        } else {
-          newY = 0; // Se il contenuto è più piccolo del viewport, non si può pan
-        }
-        
-        currentX = newX;
-        currentY = newY;
-        updateTransform();
-      }
-    }, { passive: false });
-
-    overlay.addEventListener('touchend', () => {
       isPanning = false;
       menuImagesContainer.style.transition = 'transform 0.3s ease-out'; // Ripristina transizione
+      
+      // Se dopo un pinch o pan la scala è vicina a 1, resettala a 1 e centra
+      if (currentScale < 1.05 && currentScale > 0.95) { // Tolleranza
+          currentScale = 1;
+          currentX = 0;
+          currentY = 0;
+          updateTransform();
+      }
     });
+
   </script>
 </body>
 </html>
