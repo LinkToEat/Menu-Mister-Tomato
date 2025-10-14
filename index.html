@@ -1,0 +1,232 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menù Mister Tomato</title>
+  <style>
+    /* RESET BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #f8f9fa, #eaeaea);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a {
+  text-decoration: none;
+}
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: #d8342c;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    button {
+      padding: 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .view-btn {
+      background: #d8342c;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(216, 52, 44, 0.3);
+    }
+
+    .download-btn {
+  background: #fff;
+  color: #d8342c;
+  border: 2px solid #d8342c;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  
+  display: block;       /* diventa block */
+  margin: 0 auto;       /* centrato orizzontalmente */
+}
+
+    /* OVERLAY MENU */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.98);
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 1000;
+      padding: 1rem;
+      animation: fadeIn 0.3s ease;
+      touch-action: pinch-zoom;
+    }
+
+    .overlay.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .close-btn {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      font-size: 1.8rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #d8342c;
+      font-weight: bold;
+      z-index: 1100;
+    }
+
+    .menu-images {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding-top: 3rem;
+      transform-origin: center;
+      transition: transform 0.3s ease;
+    }
+
+    .menu-images img {
+      width: 90%;
+      max-width: 400px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    /* Zoom gestito da pinch o doppio tap */
+    .zoomed {
+      transform: scale(1.5);
+    }
+
+    @media (min-width: 600px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Menù Mister Tomato</h1>
+
+  <div class="button-container">
+    <button class="view-btn" id="viewMenuBtn">🍽️ Visualizza Menù</button>
+    <a href="public/MisterTomatoMenu.pdf" download>
+      <button class="download-btn">⬇️ Scarica PDF del menù</button>
+    </a>
+  </div>
+
+  <div class="overlay" id="menuOverlay">
+    <button class="close-btn" id="closeMenuBtn">✕</button>
+    <div class="menu-images" id="menuImages"></div>
+  </div>
+
+  <script>
+    const viewBtn = document.getElementById('viewMenuBtn');
+    const closeBtn = document.getElementById('closeMenuBtn');
+    const overlay = document.getElementById('menuOverlay');
+    const menuImages = document.getElementById('menuImages');
+
+    // Genera automaticamente le immagini 1.png - 16.png
+    for (let i = 1; i <= 16; i++) {
+      const img = document.createElement('img');
+      img.src = `public/foto/${i}.png`;
+      img.alt = `Pagina ${i}`;
+      menuImages.appendChild(img);
+    }
+
+    // Mostra overlay
+    viewBtn.addEventListener('click', () => {
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    });
+
+    // Chiudi overlay
+    closeBtn.addEventListener('click', () => {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+
+   // 👉 Zoom con due dita (pinch) su mobile
+let scale = 1;
+let startDistance = 0;
+
+overlay.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    startDistance = getDistance(e.touches[0], e.touches[1]);
+  }
+}, { passive: false });
+
+overlay.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    const currentDistance = getDistance(e.touches[0], e.touches[1]);
+    const pinchScale = currentDistance / startDistance;
+    const newScale = Math.min(Math.max(1, scale * pinchScale), 3); // zoom max 3x
+
+    menuImages.style.transform = `scale(${newScale})`;
+    menuImages.style.transition = 'transform 0.05s linear';
+  }
+}, { passive: false });
+
+overlay.addEventListener('touchend', (e) => {
+  if (e.touches.length < 2) {
+    // Salva lo scale corrente
+    const style = window.getComputedStyle(menuImages);
+    const transform = style.getPropertyValue('transform');
+
+    if (transform !== 'none') {
+      const matrix = new WebKitCSSMatrix(transform);
+      scale = matrix.a; // valore di scala attuale
+    }
+  }
+});
+
+// Funzione per calcolare la distanza tra due dita
+function getDistance(touch1, touch2) {
+  const dx = touch2.clientX - touch1.clientX;
+  const dy = touch2.clientY - touch1.clientY;
+  return Math.hypot(dx, dy);
+}
+
+  </script>
+</body>
+</html>
