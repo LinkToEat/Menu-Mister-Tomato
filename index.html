@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Menù Mister Tomato</title>
+  <link rel="icon" type="image/png" href="public/logo.png">
+
   <style>
     /* RESET BASE */
     * {
@@ -397,5 +399,49 @@
     });
 
   </script>
+  <!-- AVVISO DOPPIO TAP -->
+<div id="zoomHint" style="
+  position: fixed;
+  top: 15px;
+  left: 0;
+  right: 0;
+  margin: 0 8px;                /* 🔸 Mezzo cm circa ai lati */
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 15px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+">
+  🔍 Tocca due volte per ingrandire l'immagine
+  👆🏼 Trascina con un dito per spostarti
+</div>
+
+
+
+<script>
+  const zoomHint = document.getElementById('zoomHint');
+  let zoomHintShown = false;
+
+  function showZoomHint() {
+    if (zoomHintShown) return; // Lo mostra solo la prima volta
+    zoomHintShown = false;
+    zoomHint.style.opacity = '1';
+    setTimeout(() => {
+      zoomHint.style.opacity = '0';
+    }, 10000);
+  
+  }
+
+  viewBtn.addEventListener('click', () => {
+    showZoomHint();
+  });
+</script>
+
 </body>
 </html>
