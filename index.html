@@ -179,6 +179,25 @@
   height: auto;
 }
 
+.banner-text {
+  width: calc(100% - 1cm); /* lascia mezzo cm di margine su entrambi i lati */
+  margin: 0.5cm auto; /* centra orizzontalmente */
+  text-align: center;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.banner-text .line1,
+.banner-text .line2 {
+  display: block; /* forza le righe separate */
+  white-space: nowrap; /* impedisce che la riga si spezzi */
+}
+
+
 
   </style>
 </head>
@@ -399,7 +418,8 @@
     });
 
   </script>
-  <!-- AVVISO DOPPIO TAP -->
+  
+<!-- AVVISO DOPPIO TAP -->
 <div id="zoomHint" style="
   position: fixed;
   top: 15px;
@@ -417,10 +437,12 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s ease;
+  line-height: 1.4;
 ">
-  🔍 Tocca due volte per ingrandire l'immagine
-  👆🏼 Trascina con un dito per spostarti
+  <span style="display:block; white-space: nowrap;">🔍 Tocca due volte per ingrandire l'immagine</span>
+  <span style="display:block; white-space: nowrap;">👆🏼 Trascina con un dito per spostarti</span>
 </div>
+
 
 
 
